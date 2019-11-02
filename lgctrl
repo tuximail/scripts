@@ -4,38 +4,40 @@
 #lg4l kernel module must be compiled and loaded for this script to work
 
 path="/sys/class/leds/g19_1"
+on=255
+off=0
 
 function off() {
 	for i in "$path"*bl/brightness; do
-		echo 0 > "$i"
+		echo $off > "$i"
 	done
 	for i in "$path"*m?/brightness; do
-		echo 0 > "$i"
+		echo $off > "$i"
 	done
 }
 
 if [[ "$1" == "keyboard" ]]; then
-	if [[ "$2" == "off" ]]; then
-		off
-		exit $?
-	fi
+	[[ "$2" == "off" ]] && off && exit 0
+	
 	if [[ "$2" == "random" ]]; then
 		off
 		rand=$(ls "$path"*bl/brightness | shuf -n 1)
-		echo 255 > "$rand"
+		echo $on > "$rand"
 		echo "$rand" | sed 's/.*g19_1\://' | sed 's/\:bl.*//' 
 		exit 0
 	fi
+
 	[[ $(ls "$path":$2:bl/brightness 2>/dev/null | wc -l) == 0 ]] && echo "use an existing color as param for keyboard" && exit 1
+
 	off
-	echo 255 > "$path":$2:bl/brightness
+	echo $on > "$path":$2:bl/brightness
 	exit 0
 fi
 
 if [[ "$1" == "screen" ]]; then
 	[[ !("$2" == "off" || "$2" == "on") ]] && echo "use params 'off' and 'on' to trigger any action" && exit 1
-	[[ "$2" == "off" ]] && value=0
-	[[ "$2" == "on" ]] && value=255
+	[[ "$2" == "off" ]] && value=$off
+	[[ "$2" == "on" ]] && value=$on
 	echo "$value" > "$path":white:screen/brightness
 	exit $?
 fi
