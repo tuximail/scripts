@@ -13,7 +13,7 @@ echo "<?xml version='1.0' encoding='utf-8'?>
 <description>A Linux Blog with irregular updates</description>
 <link>https://tuximail.github.io</link>
 <language>en-us</language>
-<pubDate>$(date)</pubDate>" > tuximail.rss
+<pubDate>$(date "+%a, %d %b %Y %H:%M:%S %Z")</pubDate>" > tuximail.rss
 
 
 while read -r title; do
@@ -25,7 +25,7 @@ while read -r title; do
 		<title>${title}</title>
 		<description><![CDATA[${content}]]></description>
 		<link>https://tuximail.github.io/${url}</link>
-		<guid isPermalink="false">${url}</guid>
+		<guid isPermalink='false'>${url}</guid>
 		<pubDate>${date}</pubDate>
 	</item>" >> tuximail.rss
 
