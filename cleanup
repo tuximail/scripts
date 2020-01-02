@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#pass single word to highlight it in yellow aka green
+function highlightWord() {
+  textreset=$(tput sgr0) # reset the foreground colour
+  yellow=$(tput setaf 2)
+
+  echo -n "${textreset}${yellow}$1${textreset}"
+}
+
+function deleteEmptyFolders() {
+  #delete empty folders
+  echo "empty folders in $(pwd) will be deleted:" >> "$logpath"
+  find . -type d -empty -printf %P\\n >> "$logpath"
+  echo >> "$logpath"
+  find . -type d -empty -delete
+}
+
+
+[[ $(which sudo perl-rename | wc -l) != 2 ]] && highlightWord sudo && echo -n " and " && highlightWord perl-rename && echo " is needed for this script. Please install those packages" && exit 2
+
+
+logdir=/var/log/cleanup
+logfile=cleanup.log
+logpath="$logdir"/"$logfile"
+
+user=$(whoami)
+[[ ! -d "$logdir" ]] && echo -n "logpath " && highlightWord $logdir && echo " does not exist. Creating it with sudo..." && sudo mkdir "$logdir" && sudo chown ${user}:${user} "$logdir"
+
+
+#create logfile (if already exist - file remains)
+touch "$logpath" || (echo -n "could not touch " && highlightWord $logpath && echo " aborting.." && exit 2)
+
+#enter current time into logfile
+date >> "$logpath"
+echo >> "$logpath"
+
+deleteEmptyFolders
+
+#fix naming
+echo "rename following files in $(pwd):" >> "$logpath"
+find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -printf %P\\n >> "$logpath"
+echo >> "$logpath"
+
+find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -print0 | xargs -0 perl-rename 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' 2>&1 | grep -v "not empty"
+
+deleteEmptyFolders
