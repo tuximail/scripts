@@ -1,5 +1,14 @@
 #!/bin/bash
 
+###########################################################
+# This script is used for renaming all files and folders  #
+# in a directory to be cli suitable (meaning: no spaces, #
+# no "umlaute", etc.)                                    #
+#                                                        #
+# Dependencies: sudo perl-rename                         #
+#                                                        #
+###########################################################
+
 #pass single word to highlight it in yellow aka green
 function highlightWord() {
   textreset=$(tput sgr0) # reset the foreground colour
