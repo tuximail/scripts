@@ -17,10 +17,14 @@ function highlightWord() {
   echo -n "${textreset}${yellow}$1${textreset}"
 }
 
+statsempty=0
+statsrenamed=0
+
 function deleteEmptyFolders() {
   #delete empty folders
   echo "empty folders in $(pwd) will be deleted:" >> "$logpath"
   find . -type d -empty -printf %P\\n >> "$logpath"
+  statsempty=$(( $statsempty+$(find . -type d -empty -print | wc -l) ))
   echo >> "$logpath"
   find . -type d -empty -delete
 }
@@ -49,8 +53,12 @@ deleteEmptyFolders
 #fix naming
 echo "rename following files in $(pwd):" >> "$logpath"
 find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -printf %P\\n >> "$logpath"
+statsrenamed=$(find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -print | wc -l)
 echo >> "$logpath"
 
 find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -print0 | xargs -0 perl-rename 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' 2>&1 | grep -v "not empty"
 
 deleteEmptyFolders
+
+echo "$statsempty emtpy folders deleted"
+echo "$statsrenamed files/folders renamed"
