@@ -8,6 +8,7 @@
 #
 # WORK FOR THIS SCRIPT IS STILL IN PROGRESS!
 ############################################################
+set -e
 args=""
 
 # we trap interruptions so the actual cp process kan get killed, too.
@@ -47,6 +48,7 @@ pid=$(ps ax | grep -iw "cp" | grep -v grep | cut -dp -f1 | sed s'/\ //g' | sed -
 #if we cannot get the pid, cp must have crashed and printed to stderr. So user already know what's happening
 [[ "$pid" == "" ]] && exit 2
 name=$(ps ax | grep $pid | grep -v grep | cut -d\: -f2 | sed 's/...//')
+echo "$name"
 src=$(echo "$name" | awk '{print $(NF-1)}')
 src_size=$(du -b "$src" | tail -n1 | awk '{print $(NF-1)}')
 [[ "$src_size" == "" ]] && echo "FATAL! Could not get size of source folder!" && exit 2
