@@ -13,7 +13,8 @@ args=""
 
 # we trap interruptions so the actual cp process kan get killed, too.
 # however we cannot trap SIGKILL so this script gets terminated by kill -9 the cp subprocess will remain
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap "exit" INT TERM
+trap "kill 0" EXIT
 
 for var in $@; do
   [[ "$var" != "-B" ]] && args="$args $var"
@@ -23,7 +24,8 @@ args=$(echo "$args" | sed 's/\ //')
 
 if [[ "$args" == "$@" ]]; then
   cp $args
-  exit $?
+  wait $! 2> /dev/null
+  exit 0
 fi
 
 cp $args &
@@ -66,3 +68,4 @@ while [[ -d "/proc/$pid/" ]]; do
 
 done
 echo
+exit 0
