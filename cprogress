@@ -17,6 +17,25 @@
 ############################################################
 set -e
 
+#usage:
+#for x in {1..100} ; do
+#    prog "$x" progress
+#    sleep .1
+#done ; echo
+function prog() {
+    local w=80 p=$1;  shift
+    # create a string of spaces, then change them to dots
+    printf -v dots "%*s" "$(( $p*$w/100 ))" ""; dots=${dots// /.};
+    # print those dots on a fixed-width space plus the percentage etc.
+    printf "\r\e[K|%-*s| %3d %% %s" "$w" "$dots" "$p" "$*";
+}
+
+function checkAndDie() {
+  check="$1"
+  [[ "$check" == "" ]] && echo -e "FATAL! Could not get size of $2 folder!" && exit 2
+  return 0
+}
+
 # we trap interruptions so the actual cp process kan get killed, too.
 # however we cannot trap SIGKILL so this script gets terminated by kill -9 the cp subprocess will remain
 trap "exit" INT TERM
@@ -36,19 +55,6 @@ fi
 set -- "${newparams[@]}"
 cp "$@" &
 
-#usage:
-#for x in {1..100} ; do
-#    prog "$x" progress
-#    sleep .1
-#done ; echo
-function prog() {
-    local w=80 p=$1;  shift
-    # create a string of spaces, then change them to dots
-    printf -v dots "%*s" "$(( $p*$w/100 ))" ""; dots=${dots// /.};
-    # print those dots on a fixed-width space plus the percentage etc.
-    printf "\r\e[K|%-*s| %3d %% %s" "$w" "$dots" "$p" "$*";
-}
-
 #get pid of last cp started. We use this so this script can also be used to get the progress of a cp job which was not started by the script itself
 pid=$(ps ax | grep -iw "cp" | grep -v grep | cut -dp -f1 | sed s'/\ //g' | sed -n '$p')
 #if we cannot get the pid, cp must have crashed and printed to stderr. So user already know what's happening - exit
@@ -59,16 +65,16 @@ name="cp $@"
 #src folder is the second last param for cp
 src="${@:(-2):1}"
 src_size=$(du -b "$src" | tail -n1 | awk '{print $1'})
-[[ "$src_size" == "" ]] && echo "FATAL! Could not get size of source folder!" && exit 2
+checkAndDie $src_size source
 one_percent=$(($src_size/100))
 
 while [[ -d "/proc/$pid/" ]]; do
 
   dest_size=$(cat /proc/$pid/io | grep -w write_bytes | cut -d\  -f2)
-  [[ "$dest_size" == "" ]] && echo "FATAL! Could not get size of dest folder!" && exit 2
+  checkAndDie $dest_size destination
   prog $(($dest_size/one_percent)) $name
-  sleep 1s
+  sleep .1s
 
 done
-echo
-exit 0
+
+echo && exit 0
