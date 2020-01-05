@@ -36,8 +36,8 @@ function checkAndDie() {
   return 0
 }
 
-# we trap interruptions so the actual cp process kan get killed, too.
-# however we cannot trap SIGKILL so this script gets terminated by kill -9 the cp subprocess will remain
+# we trap interruptions so the actual cp process can get killed, too.
+# however we cannot trap SIGKILL so if this script gets terminated by kill -9 the cp subprocess will remain
 trap "exit" INT TERM
 trap "kill 0" EXIT
 
