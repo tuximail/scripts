@@ -1,0 +1,59 @@
+##################################
+# This script creates playlist files out of the files stored in
+# the directory where the script is executed
+#
+# Usage: $1 = name of playlist file
+# optional: $2 = -a to append if playlist file already exists
+#
+##################################
+#!/bin/bash
+
+mountpath=/root/path/to/your/music
+playlists=/path/to/your/playlists
+
+name="$1"
+
+case "$1" in
+	-a)
+		name="$2"
+		[[ -z "$name" ]] && echo "please pass a name for the playlist" && exit 2
+		[[ ! -f "$playlists/${name}.m3u" ]] && echo "-a used but $name does not exist!" && exit 2
+
+	;;
+	-l)
+		ls "$playlists" | grep -v handy | sed 's/.m3u//' && exit 0
+	;;
+	-c)
+		for i in "$playlists"/*.m3u; do
+			echo "checking $i"
+			echo
+			content=$(cat "$i")
+			while read -r line; do
+				blackboxpath=$(echo "$line" | sed 's,'"$mountpath"',,')
+				[[ ! -f "$blackboxpath" && "$blackboxpath" != "" ]] && echo "File $blackboxpath does not exist!"
+			done <<< "$content"
+		done
+		exit 0
+	;;
+	-r)
+		name="$2"
+		playlist="$playlists/${name}.m3u"
+		[[ -z "$name" ]] && echo "please pass a name for the playlist" && exit 2
+		content=$(cat "$playlist")
+		while read -r line; do
+			blackboxpath=$(echo "$line" | sed 's,'"$mountpath"',,')
+			[[ ! -f "$blackboxpath" && "$blackboxpath" != "" ]] && echo "File $blackboxpath removed from $name" && continue
+			echo "$line" >> "${playlist}.cleaned"
+		done <<< "$content"
+		mv "${playlist}.cleaned" "$playlist"
+		exit 0
+	;;
+esac
+
+[[ -f "$playlists/${name}.m3u" && "$1" != "-a" ]] && echo "$playlists/$1 already exists. Use -a to append to this file" && exit 1
+
+pathextension=$(pwd)
+
+find . -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.ogg" \) -printf ${mountpath}${pathextension}/%P\\n >> $playlists/"$name".m3u
+
+echo "added"
