@@ -54,14 +54,14 @@ echo >> "$logpath"
 deleteEmptyFolders
 
 #fix naming
-searchstring=(find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*")
+searchstring=(find . -xdev -depth -name "*[ÄÖÜäöüß&\(\)\', A-Z]*")
 cleanupstring=(find . -xdev -depth -name "*__*")
 cleanups=$("${cleanupstring[@]}" -printf %P\\n | sed '/^$/d')
 detected=$("${searchstring[@]}" -printf %P\\n | sed '/^$/d')
 statsrenamed=$(( $(echo -n "$detected" |  wc -l)+$(echo -n "$cleanups" | wc -l) ))
 [[ "$statsrenamed" != 0 ]] && echo -e "rename following files in $(pwd):\n$detected\n$cleanups\n" >> "$logpath"
 # by using + instead of ; to terminate the rename process we speed things up a little as this always returns true. We use execdir to prevent issues of renaming a folder and its subdir and therefore getting "file not found" errors
-$("${searchstring[@]}" -execdir $renamescript 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' "{}" \+)
+$("${searchstring[@]}" -execdir $renamescript "s/\'//g;s/,//g;s/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;" "{}" \+)
 
 $("${cleanupstring[@]}" -execdir $renamescript 's/_{2,}/_/g;' "{}" \+)  #replace double __ with a single _ 
 
