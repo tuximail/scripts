@@ -76,5 +76,5 @@ while [[ -d "/proc/$pid/" ]]; do
   sleep .1s
 
 done
-
+prog 100 $name
 echo && exit 0
