@@ -22,16 +22,15 @@ statsrenamed=0
 
 function checkDependencies() {
   renamescript=rename
-  [[ $(cat /etc/*release | grep -i name | sed -n '1p' | grep -i arch | wc -l) == 1 ]] && renamescript=perl-rename
+  [[ $(cat /etc/*release | grep -i name | sed -n '1p' | grep -i arch | wc -l) == 1 ]] && renamescript=perl-rename # script has another name when on arch - might be the case for other distributions, too
   [[ $(which sudo $renamescript | wc -l) != 2 ]] && highlightWord sudo && echo -n " and " && highlightWord $renamescript && echo " is needed for this script. Please install those packages" && exit 2
 }
 
 function deleteEmptyFolders() {
   #delete empty folders
-  echo "empty folders in $(pwd) will be deleted:" >> "$logpath"
-  find . -type d -empty -printf %P\\n >> "$logpath"
-  statsempty=$(( $statsempty+$(find . -type d -empty -print | wc -l) ))
-  echo >> "$logpath"
+  deleted=$(find . -type d -empty -printf %P\\n)
+  statsempty=$(( $statsempty+$(echo "$deleted" | sed '/^$/d' | wc -l) ))
+  [[ $statsempty != 0 ]] && echo -e "empty folders in $(pwd) will be deleted: \n$deleted\n" >> "$logpath"
   find . -type d -empty -delete
 }
 
@@ -55,12 +54,16 @@ echo >> "$logpath"
 deleteEmptyFolders
 
 #fix naming
-echo "rename following files in $(pwd):" >> "$logpath"
-detected=$(find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*" -printf %P\\n)
-echo -e "$detected\n" >> "$logpath"
-statsrenamed=$(echo "$detected" | sed '/^$/d' | wc -l)
+searchstring=(find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*")
+cleanupstring=(find . -xdev -depth -name "*__*")
+cleanups=$("${cleanupstring[@]}" -printf %P\\n | sed '/^$/d')
+detected=$("${searchstring[@]}" -printf %P\\n | sed '/^$/d')
+statsrenamed=$(( $(echo -n "$detected" |  wc -l)+$(echo -n "$cleanups" | wc -l) ))
+[[ "$statsrenamed" != 0 ]] && echo -e "rename following files in $(pwd):\n$detected\n$cleanups\n" >> "$logpath"
+# by using + instead of ; to terminate the rename process we speed things up a little as this always returns true. We use execdir to prevent issues of renaming a folder and its subdir and therefore getting "file not found" errors
+$("${searchstring[@]}" -execdir $renamescript 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' "{}" \+) 
 
-find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*" -print0 | xargs -0 $renamescript 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' 2>&1 | grep -v "not empty"
+$("${cleanupstring[@]}" -execdir rename 's/_{2,}/_/g;' "{}" \+)  #replace double __ with a single _ 
 
 deleteEmptyFolders
 
