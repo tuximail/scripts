@@ -56,11 +56,11 @@ deleteEmptyFolders
 
 #fix naming
 echo "rename following files in $(pwd):" >> "$logpath"
-find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -printf %P\\n >> "$logpath"
-statsrenamed=$(find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -print | wc -l)
-echo >> "$logpath"
+detected=$(find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*" -printf %P\\n)
+echo -e "$detected\n" >> "$logpath"
+statsrenamed=$(echo "$detected" | sed '/^$/d' | wc -l)
 
-find . -xdev -depth -name "*[ÄÖÜäöüß&\-( A-Z]*" -print0 | xargs -0 $renamescript 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' 2>&1 | grep -v "not empty"
+find . -xdev -depth -name "*[ÄÖÜäöüß&\( A-Z]*" -print0 | xargs -0 $renamescript 's/Ä/Ae/g;s/Ö/Oe/g;s/Ü/Ue/g;s/ä/ae/g;s/ö/oe/g;s/ü/ue/g;s/ß/ss/g;y/A-Z/a-z/;y/&-)( /_/;' 2>&1 | grep -v "not empty"
 
 deleteEmptyFolders
 
