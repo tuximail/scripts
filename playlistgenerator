@@ -11,41 +11,83 @@
 mountpath=/root/path/to/your/music
 playlists=/path/to/your/playlists
 
+function checkName() {
+	[[ -z "$name" ]] && echo "please pass a name for the playlist" && exit 2
+	return 0	
+}
+
 name="$1"
 
 case "$1" in
-	-a)
+	-a|--append)
 		name="$2"
-		[[ -z "$name" ]] && echo "please pass a name for the playlist" && exit 2
+		checkName	
 		[[ ! -f "$playlists/${name}.m3u" ]] && echo "-a used but $playlists/${name}.m3u does not exist!" && exit 2
 
 	;;
-	-l)
+	-l|--list)
 		ls "$playlists" | grep -v handy | sed 's/.m3u//' && exit 0
 	;;
-	-c)
+	-c|--check)
 		for i in "$playlists"/*.m3u; do
-			echo "checking $i"
-			echo
+			output=0
 			content=$(cat "$i")
 			while read -r line; do
 				blackboxpath=$(echo "$line" | sed 's,'"$mountpath"',,')
-				[[ ! -f "$blackboxpath" && "$blackboxpath" != "" ]] && echo "File $blackboxpath does not exist!"
+				if [[ ! -f "$blackboxpath" && "$blackboxpath" != "" ]]; then
+					textreset=$(tput sgr0) # reset the foreground colour
+  					yellow=$(tput setaf 2)
+
+					[[ $output == 0 ]] && echo -n "${textreset}${yellow}Issues in $i${textreset}" && echo && output=1
+					echo "File $blackboxpath does not exist!" 
+				fi
 			done <<< "$content"
 		done
 		exit 0
 	;;
-	-r)
+	-p|--purge)
 		name="$2"
+		checkName
 		playlist="$playlists/${name}.m3u"
-		[[ -z "$name" ]] && echo "please pass a name for the playlist" && exit 2
 		content=$(cat "$playlist")
 		while read -r line; do
 			blackboxpath=$(echo "$line" | sed 's,'"$mountpath"',,')
 			[[ ! -f "$blackboxpath" && "$blackboxpath" != "" ]] && echo "File $blackboxpath removed from $name" && continue
-			echo "$line" >> "${playlist}.cleaned"
+			echo "$line" >> "${playlist}.purged"
 		done <<< "$content"
-		mv "${playlist}.cleaned" "$playlist"
+		mv "${playlist}.purged" "$playlist"
+		exit 0
+	;;
+	-r|--remove)
+		name="$2"
+		checkName
+		pattern="$3"
+		[[ -z "$pattern" ]] && echo "please pass a pattern do delete from $name" && exit 2
+		playlist="$playlists/${name}.m3u"
+		sed -i '/'"$pattern"'/d' "$playlist"
+		exit $?
+	;;
+	-s|--show)
+		name="$2"
+		playlist="$playlists/${name}.m3u"
+		[[ ! -f "$playlist" ]] && echo "$playlist could not be found" && exit 2
+		cat "$playlist"
+		exit $?
+	;;
+	-h|--help)
+		echo
+		echo "Usage: playlistgenerator playlistname"
+		echo "This will create a new playlist (m3u) with given name containing all music files (mp3, ogg, flac) of current folder and its subdirs"
+		echo 
+		echo "Params:"
+		echo -e "-a --append\tAppends the music files of current dir and its subdir to existing playlist file"
+		echo -e "-l --list\tLists all existing playlists"
+		echo -e "-c --check\tChecks all playlists for inconsistency. Information (missing files referenced in playlistfiles) are printed to stdout"
+		echo -e "-p --purhe\tPurges the errors in playlist files detected by -c"
+		echo -e "-r --remove\tExpects playlistfile and a regexpattern. All lines matching the pattern will be removed from the playlistfile"
+		echo -e "-s --show\tShows the content of given playlist file"
+		echo -e "-h --help\tThis help message"
+		
 		exit 0
 	;;
 esac
