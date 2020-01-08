@@ -32,7 +32,7 @@ function prog() {
 
 function checkAndDie() {
   check="$1"
-  [[ "$check" == "" ]] && echo -e "FATAL! Could not get size of $2 folder!" && exit 2
+  [[ "$check" == "" || ! -f "/proc/$pid/io" ]] && echo -e "FATAL! Could not get size of $2 folder!" && exit 2
   return 0
 }
 
@@ -65,14 +65,14 @@ name="cp $@"
 #src folder is the second last param for cp
 src="${@:(-2):1}"
 src_size=$(du -b "$src" | tail -n1 | awk '{print $1'})
-checkAndDie $src_size source
+checkAndDie "$src_size" source
 one_percent=$(($src_size/100))
 
 while [[ -d "/proc/$pid/" ]]; do
 
   dest_size=$(cat /proc/$pid/io | grep -w write_bytes | cut -d\  -f2)
-  checkAndDie $dest_size destination
-  prog $(($dest_size/one_percent)) $name
+  checkAndDie "$dest_size" destination
+  prog $(($dest_size/$one_percent)) $name
   sleep .1s
 
 done
