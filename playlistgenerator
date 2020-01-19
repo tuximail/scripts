@@ -92,8 +92,6 @@ case "$1" in
 	;;
 esac
 
-[[ -z "$2" ]] && $0 --help && exit 1
-
 [[ -f "$playlists/${name}.m3u" && "$1" != "-a" ]] && echo "$playlists/${1}.m3u already exists. Use -a to append to this file" && exit 1
 
 pathextension=$(pwd)
