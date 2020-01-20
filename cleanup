@@ -23,7 +23,7 @@ statsrenamed=0
 function checkDependencies() {
   renamescript=rename
   [[ $(cat /etc/*release | grep -i name | sed -n '1p' | grep -i arch | wc -l) == 1 ]] && renamescript=perl-rename # script has another name when on arch - might be the case for other distributions, too
-  [[ $(which sudo $renamescript | wc -l) != 2 ]] && highlightWord sudo && echo -n " and " && highlightWord $renamescript && echo " is needed for this script. Please install those packages" && exit 2
+  [[ $(which sudo $renamescript 2>/dev/null| wc -l) != 2 ]] && highlightWord sudo && echo -n " and " && highlightWord $renamescript && echo " is needed for this script. Please install those packages" && exit 2
 }
 
 function deleteEmptyFolders() {
