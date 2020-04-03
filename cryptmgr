@@ -48,7 +48,7 @@ if [[ $warn == "true"  ]]; then
   echo -n "This is considered bad. Proceed anyway? [y/n] "
   read -n 1 proc
   echo
-  [[ "$proc" != "y" && "$proc" != "n" ]] && echo "Error: only 'y' or 'n' is allowed" && exec $0 "$@"
+  [[ "$proc" != "y" && "$proc" != "n" ]] && echo "Error: only 'y' or 'n' is allowed" && echo && exec $0 "$@"
   [[ "$proc" == "n" ]] && exit 0
 fi
 
