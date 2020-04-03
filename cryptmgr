@@ -54,7 +54,7 @@ fi
 
 cd "$path"
 
-[[ -z "$files" ]] && files=$(find -type f | sed '/.gpg/'d)
+[[ -z "$files" ]] && echo "searching for files..." && files=$(find -type f | sed '/.gpg/'d)
 param="-c"
 destdir="$path"
 postfix="gpg"
@@ -66,7 +66,7 @@ if [[ ! -z "$3" ]]; then
   destdir="$tmpdir"
   mkdir -p "$destdir"
   postfix="decrypt"
-  [[ -z "$files" ]] && files=$(find -type f -name '*.gpg')
+  [[ -z "$files" ]] && echo "searching for files..." && files=$(find -type f -name '*.gpg')
   action="decrypting"
 fi
 
