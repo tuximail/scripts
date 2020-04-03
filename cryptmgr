@@ -1,0 +1,81 @@
+#!/bin/bash
+# This script is for encrypting/decrypting files in gpg
+# the default behaviour is to encrypt
+#
+# Dependencies: plaintext file with a password
+# Password Estimator: python2-zxcvbn
+#
+# Usage:
+# $ cryptmgr /path/to/passwordfile directory
+# this will encrypt every file in directory with the password provided in the textfile in a symmetric way with gpg
+# $ cryptmgr /path/to/passwordfile file
+# this will encrypt the file with the password provided in the textfile in a symmetric way with gpg
+# $ cryptmgr /path/to/passwordfile directory -d
+# this will decrypt every file in directory with the password provided in the textfile to /tmp/decryptemp
+# $ cryptmgr /path/to/passwordfile file -d
+# this will decrypt the file with the password provided in the textfile to /tmp/decryptemp
+#
+# Params:
+# $1: passwordfile
+# $2: directory or file to encrypt (if it is a directory everey file inside the directory will be encrypted)
+# $3 (optional): -d for decryption
+
+set -e
+tmpdir="/tmp/decryptemp"
+result=""
+warn="false"
+
+function calculatePasswordStrength() {
+    result=$(echo "$1" | zxcvbn | grep "offline_fast_hashing_1e10_per_second" | tail -n1 | cut -d: -f2 | sed 's/,//')
+    [[ "$result" != *centuries* ]] && warn="true"
+    return 0
+}
+
+[[ -z "$2" || -z "$1" ]] && echo "Error: Pass passwordfile and path as arguments" && exit 1
+
+[[ ! -d "$2" && ! -f "$2" ]] && echo "$2 - not a valid file or directory" && exit 1
+[[ ! -f "$1" ]] && echo "$1 - not a valid file" && exit 1
+
+path="$2"
+[[ -f "$2" ]] && files=$(basename "$path") && path=$(echo "$path" | sed "s/$files//") && [[ -z "$path" ]] && path="."
+password=$(cat "$1")
+[[ "$password" == "" ]] && echo "Critical: Passwordfile $1 is empty!" && exit 1
+
+calculatePasswordStrength "$password"
+
+if [[ $warn == "true"  ]]; then
+  echo "Warning: Password could be cracked in $result "
+  echo -n "This is considered bad. Proceed anyway? [y/n] "
+  read -n 1 proc
+  echo
+  [[ "$proc" != "y" && "$proc" != "n" ]] && echo "Error: only 'y' or 'n' is allowed" && exec $0 "$@"
+  [[ "$proc" == "n" ]] && exit 0
+fi
+
+cd "$path"
+
+[[ -z "$files" ]] && files=$(find -type f | sed '/.gpg/'d)
+param="-c"
+destdir="$path"
+postfix="gpg"
+action="encrypting"
+
+if [[ ! -z "$3" ]]; then
+  [[ "$3" != "-d" ]] && echo "Error: invalid param $3" && exit 1
+  param="--decrypt"
+  destdir="$tmpdir"
+  mkdir -p "$destdir"
+  postfix="decrypt"
+  [[ -z "$files" ]] && files=$(find -type f -name '*.gpg')
+  action="decrypting"
+fi
+
+[[ "$files" == "" ]] && echo "No files for $action found - aborting" && exit 0
+
+while read -r line
+do
+  name=$(basename "$line")
+  echo "$action $line"
+  echo "$password" | gpg --batch --passphrase-fd 0 --output "${destdir}/${name}.${postfix}" "$param" "$line"
+  [[ "$action" == "encrypting" ]] && rm "$line"
+done <<< "$files"
