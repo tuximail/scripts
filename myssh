@@ -5,14 +5,17 @@
 # so if you want to add a ssh shortcut named "myserver" with ip 127.0.0.1 using standard SSH Port for user "mike" authenticating with ~/.ssh/my_rsa the entry should look like this:
 # myserver;127.0.0.1:22;mike;my_rsa
 #
-# Dependencies: ssh
+# Dependencies: ssh and mosh (to use mosh call with '-m' as second parameter)
 #
 # Usage: myssh alias
 #
 shortfile=~/.ssh_shorts
 keyfiledir=~/.ssh
+client="ssh"
 
 alias="$1"
+[[ "$2" == "-m" ]] && client="mosh"
+
 config=$(awk -F';' '$1~/'"$alias"'/' "$shortfile")
 [[ "$config" == "" ]] && echo "No config found for $alias" && exit 1
 connectionstring=$(echo "$config" | awk -F';' '{print $2}')
