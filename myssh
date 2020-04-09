@@ -24,4 +24,4 @@ port=$(echo "$connectionstring" | cut -d: -f2)
 user=$(echo "$config" | awk -F';' '{print $3}')
 keyfile=$(echo "$config" | awk -F';' '{print $4}')
 
-ssh -i "${keyfiledir}/$keyfile" "$user"@"$host" -p "$port"
+"$client" -i "${keyfiledir}/$keyfile" "$user"@"$host" -p "$port"
