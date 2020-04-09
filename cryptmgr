@@ -79,3 +79,12 @@ do
   echo "$password" | gpg --batch --passphrase-fd 0 --output "${destdir}/${name}.${postfix}" "$param" "$line"
   [[ "$action" == "encrypting" ]] && rm "$line"
 done <<< "$files"
+
+if [[ "$postfix" == "decrypt" ]]; then
+  echo "cleaning up..." 
+  cd "$destdir"
+  for i in *.decrypt
+  do
+    mv "$i" $(echo "$i" | sed 's/.gpg.decrypt//')
+  done
+fi
