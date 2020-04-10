@@ -11,10 +11,8 @@
 #
 shortfile=~/.ssh_shorts
 keyfiledir=~/.ssh
-client="ssh"
 
 alias="$1"
-[[ "$2" == "-m" ]] && client="mosh"
 
 config=$(awk -F';' '$1~/'"$alias"'/' "$shortfile")
 [[ "$config" == "" ]] && echo "No config found for $alias" && exit 1
@@ -23,5 +21,8 @@ host=$(echo "$connectionstring" | cut -d: -f1)
 port=$(echo "$connectionstring" | cut -d: -f2)
 user=$(echo "$config" | awk -F';' '{print $3}')
 keyfile=$(echo "$config" | awk -F';' '{print $4}')
+command="ssh -i ${keyfiledir}/$keyfile -p $port"
+server="$user@$host"
 
-"$client" -i "${keyfiledir}/$keyfile" "$user"@"$host" -p "$port"
+[[ "$2" == "-m" ]] && mosh --ssh="$command" "$server" && exit 0
+exec $command $server && exit 0
